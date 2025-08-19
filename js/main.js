@@ -193,3 +193,191 @@
             });
             slider.addEventListener('touchstart', () => clearInterval(scrollInterval));
         });
+
+        // Add this to main.js (at the end)
+
+// ========== CREATE NOTIFICATION SYSTEM ==========
+const notificationContainer = document.createElement('div');
+notificationContainer.id = 'notification-container';
+document.body.appendChild(notificationContainer);
+
+// CSS for notifications (add to styles.css)
+const notificationCSS = `
+#notification-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-width: 350px;
+}
+
+.notification {
+  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+  color: white;
+  padding: 18px 25px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  transform: translateX(120%);
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  overflow: hidden;
+}
+
+.notification::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 100%;
+  background: #ffcc00;
+}
+
+.notification.active {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.notification i {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.notification-content {
+  flex-grow: 1;
+}
+
+.notification h4 {
+  margin: 0 0 6px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.notification p {
+  margin: 0;
+  font-size: 15px;
+  opacity: 0.9;
+}
+
+.notification-close {
+  background: rgba(255,255,255,0.2);
+  border: none;
+  color: white;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.notification-close:hover {
+  background: rgba(255,255,255,0.3);
+  transform: rotate(90deg);
+}
+`;
+
+// Add the CSS to the document
+const style = document.createElement('style');
+style.textContent = notificationCSS;
+document.head.appendChild(style);
+
+// Function to show notification
+function showNotification(title, message, icon = 'fas fa-check-circle') {
+  const notification = document.createElement('div');
+  notification.className = 'notification';
+  notification.innerHTML = `
+    <i class="${icon}"></i>
+    <div class="notification-content">
+      <h4>${title}</h4>
+      <p>${message}</p>
+    </div>
+    <button class="notification-close"><i class="fas fa-times"></i></button>
+  `;
+  
+  notificationContainer.appendChild(notification);
+  
+  // Trigger animation
+  setTimeout(() => {
+    notification.classList.add('active');
+  }, 10);
+  
+  // Auto-remove after 5 seconds
+  const removeTimer = setTimeout(() => {
+    notification.remove();
+  }, 5000);
+  
+  // Close button functionality
+  const closeBtn = notification.querySelector('.notification-close');
+  closeBtn.addEventListener('click', () => {
+    clearTimeout(removeTimer);
+    notification.remove();
+  });
+}
+
+// ========== MODIFIED AUTO-FILL FUNCTION ==========
+document.addEventListener('click', function(e) {
+  const clickedBtn = e.target.closest('a.btn, .addon-button');
+  if (!clickedBtn) return;
+  
+  let itemType = '';
+  let itemName = '';
+  let itemPrice = '';
+  let icon = '';
+  
+  // Service Cards
+  if (clickedBtn.closest('.service-card')) {
+    const serviceCard = clickedBtn.closest('.service-card');
+    itemName = serviceCard.querySelector('h3').textContent;
+    itemPrice = serviceCard.querySelector('.service-price').textContent;
+    itemType = 'Service';
+    icon = 'fas fa-music';
+  }
+  
+  // Package Cards
+  else if (clickedBtn.closest('.package-card')) {
+    const packageCard = clickedBtn.closest('.package-card');
+    itemName = packageCard.querySelector('h3').textContent;
+    itemPrice = packageCard.querySelector('.package-price').textContent;
+    itemType = 'Package';
+    icon = 'fas fa-box-open';
+  }
+  
+  // Addon Cards
+  else if (clickedBtn.closest('.addon-card')) {
+    const addonCard = clickedBtn.closest('.addon-card');
+    itemName = addonCard.querySelector('.addon-name').textContent;
+    itemPrice = addonCard.querySelector('.addon-price').textContent;
+    itemType = 'Add-on';
+    icon = 'fas fa-plus-circle';
+  }
+  
+  if (itemName) {
+    const textarea = document.getElementById('message');
+    const currentValue = textarea.value.trim();
+    const separator = currentValue ? '\n\n' : '';
+    
+    // Create formatted entry
+    const entry = `${itemType}: ${itemName} ${itemPrice}`;
+    
+    // Add to textarea
+    textarea.value = `${currentValue}${separator}${entry}`;
+    
+    // Show beautiful notification
+    showNotification(
+      `${itemType} Added!`,
+      `${itemName} has been added to your booking details`,
+      icon
+    );
+  }
+});
